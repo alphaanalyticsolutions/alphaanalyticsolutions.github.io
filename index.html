@@ -1,0 +1,1563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#03080f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>AlphaAnalytics | Data Analytics Solutions</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   RESET & ROOT
+============================================================ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#03080f;--card:#08121f;--card2:#0b1928;--border:#152036;
+  --cyan:#00d4f5;--cyan2:#00b8d9;--purple:#7c3aed;--purple2:#6d28d9;
+  --emerald:#10b981;--amber:#f59e0b;
+  --text:#fff;--muted:#6b8aaa;--muted2:#9ab5d0;
+  --font-head:'Syne',sans-serif;--font-body:'DM Sans',sans-serif;
+}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;text-size-adjust:100%;scroll-padding-top:70px}
+body{font-family:var(--font-body);background:var(--bg);color:var(--text);overflow-x:hidden;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+
+/* iOS tap + touch optimisation */
+a,button,input,select,textarea{-webkit-tap-highlight-color:transparent}
+input,textarea,select{touch-action:manipulation;font-size:16px!important}
+button{touch-action:manipulation}
+
+/* iOS safe area */
+nav{padding-left:max(56px,env(safe-area-inset-left));padding-right:max(56px,env(safe-area-inset-right))}
+footer{padding-bottom:max(36px,calc(36px + env(safe-area-inset-bottom)))}
+.mobile-menu{padding-top:max(80px,calc(80px + env(safe-area-inset-top)));padding-bottom:max(40px,calc(40px + env(safe-area-inset-bottom)))}
+
+/* ============================================================
+   BACKGROUND — canvas is behind everything (z-index:0)
+============================================================ */
+#bg-canvas{position:fixed;top:0;left:0;z-index:0;display:block;pointer-events:none}
+.grid-bg{position:fixed;inset:0;z-index:1;pointer-events:none;
+  background-image:linear-gradient(rgba(0,212,245,.03) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(0,212,245,.03) 1px,transparent 1px);
+  background-size:72px 72px}
+
+/* All content sits above canvas */
+section,footer,nav,.trust-bar,.stats-strip{position:relative;z-index:2}
+
+/* ============================================================
+   PROGRESS BAR
+============================================================ */
+#progress-bar{position:fixed;top:0;left:0;height:2px;background:linear-gradient(90deg,var(--cyan),var(--purple));z-index:999;width:0%;transition:width .1s linear;box-shadow:0 0 8px var(--cyan)}
+
+/* ============================================================
+   NAV — Desktop tabs layout
+============================================================ */
+nav{position:fixed;top:0;left:0;right:0;z-index:500;display:flex;align-items:center;justify-content:space-between;padding:20px 56px;background:rgba(3,8,15,0);backdrop-filter:blur(0px);transition:all .4s}
+nav.scrolled{background:rgba(3,8,15,.92);backdrop-filter:blur(20px);border-bottom:1px solid rgba(0,212,245,.08);padding:14px 56px;box-shadow:0 4px 40px rgba(0,0,0,.6)}
+.logo{font-family:var(--font-head);font-size:21px;font-weight:800;color:#fff;letter-spacing:-.5px;text-decoration:none;display:flex;align-items:center;gap:8px}
+.logo-dot{width:8px;height:8px;border-radius:50%;background:var(--cyan);box-shadow:0 0 12px var(--cyan);animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.4);opacity:.6}}
+
+/* Desktop tab-style nav links */
+.nav-links{display:flex;align-items:center;gap:6px}
+.nav-link{padding:8px 16px;color:rgba(255,255,255,.65);font-size:14px;font-weight:500;text-decoration:none;border-radius:8px;transition:all .2s;background:transparent;border:none;cursor:pointer;font-family:var(--font-body)}
+.nav-link:hover,.nav-link.active{color:#fff;background:rgba(255,255,255,.07)}
+.nav-link.careers-link{color:var(--cyan)}
+.nav-right{display:flex;align-items:center;gap:10px}
+.btn-nav-o{padding:9px 20px;border:1px solid rgba(255,255,255,.2);border-radius:8px;background:transparent;color:#fff;font-size:13px;font-weight:500;cursor:pointer;transition:all .25s;font-family:var(--font-body);text-decoration:none;display:inline-flex;align-items:center}
+.btn-nav-o:hover{background:rgba(255,255,255,.08);border-color:rgba(0,212,245,.4);color:var(--cyan)}
+.btn-nav-p{padding:9px 20px;border-radius:8px;background:var(--purple);color:#fff;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .25s;font-family:var(--font-body);box-shadow:0 0 20px rgba(124,58,237,.3);text-decoration:none;display:inline-flex;align-items:center}
+.btn-nav-p:hover{background:var(--purple2);box-shadow:0 0 30px rgba(124,58,237,.6);transform:translateY(-1px)}
+
+/* ============================================================
+   HAMBURGER + MOBILE MENU (bar-style fullscreen overlay)
+============================================================ */
+.hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:8px;background:none;border:none;z-index:600}
+.hamburger span{display:block;width:22px;height:2px;background:#fff;border-radius:2px;transition:all .3s}
+.hamburger.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+.hamburger.open span:nth-child(2){opacity:0;transform:scaleX(0)}
+.hamburger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+.mobile-menu{display:none;position:fixed;inset:0;background:rgba(3,8,15,.98);backdrop-filter:blur(24px);z-index:550;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:40px 24px}
+.mobile-menu.open{display:flex}
+.mobile-menu-link{font-family:var(--font-head);font-size:26px;font-weight:800;color:rgba(255,255,255,.7);text-decoration:none;padding:12px 28px;border-radius:12px;transition:all .2s;background:none;border:none;cursor:pointer;letter-spacing:-.5px;width:100%;text-align:center}
+.mobile-menu-link:hover,.mobile-menu-link.cyan{color:var(--cyan)}
+.mobile-menu-divider{width:48px;height:1px;background:var(--border);margin:10px 0}
+.mobile-menu-btn{margin-top:20px;padding:14px 40px;background:var(--purple);color:#fff;border-radius:10px;font-size:16px;font-weight:700;border:none;cursor:pointer;font-family:var(--font-body);box-shadow:0 0 24px rgba(124,58,237,.4);width:100%}
+
+/* ============================================================
+   CONTAINER
+============================================================ */
+.container{max-width:1200px;margin:0 auto;padding:0 56px}
+
+/* ============================================================
+   HERO
+============================================================ */
+#hero{min-height:100vh;min-height:100dvh;display:flex;align-items:center;padding-top:80px;overflow:hidden}
+.hero-inner{display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center;width:100%;padding:80px 56px;max-width:1200px;margin:0 auto}
+.hero-eyebrow{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border:1px solid rgba(0,212,245,.25);border-radius:999px;background:rgba(0,212,245,.06);font-size:12px;font-weight:600;color:var(--cyan);letter-spacing:1px;text-transform:uppercase;margin-bottom:28px}
+.hero-eyebrow-dot{width:6px;height:6px;border-radius:50%;background:var(--cyan);animation:pulse 1.5s ease-in-out infinite}
+.hero-title{font-family:var(--font-head);font-size:clamp(42px,5vw,68px);font-weight:800;line-height:1.04;letter-spacing:-2px;margin-bottom:24px}
+.hero-title .hl{background:linear-gradient(120deg,var(--cyan),#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-desc{font-size:17px;color:var(--muted2);line-height:1.7;margin-bottom:40px;max-width:480px;font-weight:300}
+.hero-btns{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:48px}
+.btn-hp{padding:14px 28px;background:var(--purple);color:#fff;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;border:none;display:inline-flex;align-items:center;gap:8px;transition:all .25s;box-shadow:0 0 24px rgba(124,58,237,.4);font-family:var(--font-body);text-decoration:none}
+.btn-hp:hover{background:var(--purple2);box-shadow:0 0 40px rgba(124,58,237,.7);transform:translateY(-2px)}
+.btn-hp:hover svg{transform:translateX(4px)}
+.btn-hp svg{transition:transform .25s}
+.btn-ho{padding:14px 28px;background:transparent;color:#fff;border:1px solid rgba(255,255,255,.2);border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;transition:all .25s;font-family:var(--font-body);text-decoration:none;display:inline-flex;align-items:center}
+.btn-ho:hover{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.4);transform:translateY(-2px)}
+.hero-social-proof{display:flex;align-items:center;gap:16px}
+.avatar-stack{display:flex}
+.avatar-stack div{width:32px;height:32px;border-radius:50%;border:2px solid var(--bg);margin-left:-8px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.avatar-stack div:first-child{margin-left:0}
+.a1{background:linear-gradient(135deg,#7c3aed,#06b6d4)}
+.a2{background:linear-gradient(135deg,#10b981,#0891b2)}
+.a3{background:linear-gradient(135deg,#f59e0b,#ef4444)}
+.a4{background:linear-gradient(135deg,#8b5cf6,#ec4899)}
+.social-txt{font-size:13px;color:var(--muted2)}
+.social-txt strong{color:#fff}
+
+/* ============================================================
+   HERO CARD — graph with animated lines + metrics
+   hero-right is always block on desktop; hidden only in mobile MQ
+============================================================ */
+.hero-right{display:block}
+.hero-card{background:var(--card);border:1px solid var(--border);border-radius:20px;overflow:hidden;box-shadow:0 0 80px rgba(0,212,245,.07),0 40px 80px rgba(0,0,0,.6)}
+.hero-img{width:100%;height:280px;background:#060a14;position:relative;overflow:hidden}
+
+/* SVG graph animation keyframes */
+.nline{stroke-dasharray:2000;stroke-dashoffset:2000;animation:drawL 2.5s cubic-bezier(.16,1,.3,1) forwards}
+.nline:nth-child(2){animation-delay:.3s}
+.pdot{animation:pdotA 2s ease-in-out infinite}
+.pdot:nth-child(2){animation-delay:.6s}
+.pdot:nth-child(3){animation-delay:1.2s}
+@keyframes drawL{to{stroke-dashoffset:0}}
+@keyframes pdotA{0%,100%{r:5;opacity:1}50%{r:8;opacity:.5}}
+
+.hero-metrics{display:grid;grid-template-columns:1fr 1fr 1fr;border-top:1px solid var(--border)}
+.metric{padding:18px 20px;position:relative}
+.metric+.metric{border-left:1px solid var(--border)}
+.metric-val{font-family:var(--font-head);font-size:20px;font-weight:800;color:#fff;margin-bottom:3px}
+.metric-val.c{color:var(--cyan)}
+.metric-val.e{color:var(--emerald)}
+.metric-lbl{font-size:11px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:.5px}
+.metric-badge{position:absolute;top:14px;right:14px;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px}
+.up{background:rgba(16,185,129,.15);color:var(--emerald);border:1px solid rgba(16,185,129,.3)}
+.down{background:rgba(239,68,68,.12);color:#f87171;border:1px solid rgba(239,68,68,.25)}
+
+/* ============================================================
+   TRUST BAR (scrolling ticker)
+============================================================ */
+.trust-bar{padding:20px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);background:rgba(8,18,31,.5);overflow:hidden}
+.trust-track{display:flex;gap:56px;align-items:center;width:max-content;animation:trustScroll 25s linear infinite}
+@keyframes trustScroll{to{transform:translateX(-50%)}}
+.trust-item{font-size:13px;font-weight:600;color:var(--muted);white-space:nowrap;display:flex;align-items:center;gap:8px;text-transform:uppercase;letter-spacing:1px}
+.trust-dot{width:4px;height:4px;border-radius:50%;background:var(--cyan);opacity:.6}
+
+/* ============================================================
+   SECTION LABELS
+============================================================ */
+.sec-eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:700;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;margin-bottom:16px}
+.sec-eyebrow::before{content:'';width:20px;height:1.5px;background:var(--cyan);display:inline-block}
+.sec-title{
+  font-family:var(--font-body);
+  font-size:clamp(28px,3.5vw,42px);
+  font-weight:700;
+  line-height:1.15;
+  letter-spacing:-0.4px;
+  margin-bottom:16px;
+  color:#ffffff;
+}
+.sec-desc{font-size:16px;color:var(--muted2);line-height:1.7;max-width:600px;margin-bottom:56px;font-weight:300}
+
+/* ============================================================
+   SERVICES
+============================================================ */
+#services{padding:130px 0}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);border-radius:20px;overflow:hidden;border:1px solid var(--border)}
+.svc-card{background:var(--card);padding:32px;position:relative;overflow:hidden;transition:background .3s}
+.svc-card:hover{background:var(--card2)}
+.svc-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1.5px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);transform:scaleX(0);transform-origin:center;transition:transform .5s cubic-bezier(.16,1,.3,1)}
+.svc-card:hover::before{transform:scaleX(1)}
+.ico{width:48px;height:48px;border-radius:12px;background:rgba(0,212,245,.1);display:flex;align-items:center;justify-content:center;color:var(--cyan);margin-bottom:20px;transition:all .3s;flex-shrink:0}
+.svc-card:hover .ico{background:rgba(0,212,245,.2);transform:scale(1.08)}
+.svc-title{font-family:var(--font-head);font-size:17px;font-weight:700;margin-bottom:12px;color:#fff}
+.svc-desc{font-size:14px;color:var(--muted2);line-height:1.65;margin-bottom:20px;font-weight:300}
+.svc-list{list-style:none;display:flex;flex-direction:column;gap:8px}
+.svc-list li{font-size:13px;color:var(--muted2);display:flex;align-items:center;gap:8px}
+.svc-list li::before{content:'';width:16px;height:16px;flex-shrink:0;border-radius:50%;background:rgba(0,212,245,.12);border:1px solid rgba(0,212,245,.4);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300d4f5' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E");background-size:9px;background-repeat:no-repeat;background-position:center}
+
+/* ML Featured Card (from NEW file) */
+.ml-card{margin-top:2px;background:linear-gradient(135deg,rgba(0,212,245,.07) 0%,var(--card) 40%,rgba(124,58,237,.07) 100%);border:1px solid rgba(0,212,245,.25);border-radius:20px;padding:48px;display:grid;grid-template-columns:1fr 1.4fr;gap:56px;align-items:start;position:relative;overflow:hidden;transition:border-color .3s}
+.ml-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--cyan),var(--purple),var(--cyan));background-size:200%;animation:mlShimmer 3s linear infinite}
+@keyframes mlShimmer{to{background-position:200%}}
+.ml-card:hover{border-color:rgba(0,212,245,.45)}
+.ml-badge{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--cyan);background:rgba(0,212,245,.1);border:1px solid rgba(0,212,245,.25);padding:5px 12px;border-radius:999px;margin-bottom:24px}
+.ml-ico{width:60px;height:60px;border-radius:16px;background:rgba(0,212,245,.1);border:1px solid rgba(0,212,245,.2);display:flex;align-items:center;justify-content:center;color:var(--cyan);margin-bottom:20px}
+.ml-title{font-family:var(--font-head);font-size:26px;font-weight:800;color:#fff;letter-spacing:-.3px;margin-bottom:14px;line-height:1.2}
+.ml-desc{font-size:15px;color:var(--muted2);line-height:1.7;margin-bottom:24px;font-weight:300}
+.ml-steps{display:flex;flex-direction:column;gap:0}
+.ml-step{display:flex;align-items:flex-start;gap:16px;padding:16px 0;border-bottom:1px solid rgba(21,32,54,.8)}
+.ml-step:last-child{border-bottom:none;padding-bottom:0}
+.ml-step:first-child{padding-top:0}
+.ml-step-num{font-family:var(--font-head);font-size:13px;font-weight:800;color:var(--cyan);opacity:.6;flex-shrink:0;width:24px;margin-top:2px}
+.ml-step-title{font-size:15px;font-weight:700;color:#fff;margin-bottom:3px}
+.ml-step-desc{font-size:13px;color:var(--muted2);line-height:1.55;font-weight:300}
+
+/* ============================================================
+   PROCESS
+============================================================ */
+#process{padding:130px 0;background:linear-gradient(180deg,transparent,rgba(8,18,31,.5),transparent)}
+.process-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:60px;position:relative}
+.process-steps::before{content:'';position:absolute;top:28px;left:10%;right:10%;height:1px;background:linear-gradient(90deg,transparent,rgba(0,212,245,.2) 20%,rgba(124,58,237,.2) 80%,transparent)}
+.step-card{padding:32px 24px;position:relative;text-align:center}
+.step-card:hover .step-ico{background:rgba(0,212,245,.15);transform:translateY(-4px)}
+.step-num{font-size:11px;font-weight:700;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:20px;display:flex;align-items:center;justify-content:center;gap:6px}
+.step-num-dot{width:5px;height:5px;border-radius:50%;background:var(--cyan);opacity:.6}
+.step-ico{width:56px;height:56px;border-radius:16px;background:rgba(0,212,245,.08);display:flex;align-items:center;justify-content:center;color:var(--cyan);margin:0 auto 20px;transition:all .3s;border:1px solid rgba(0,212,245,.15)}
+.step-text{font-family:var(--font-head);font-size:16px;font-weight:700;color:#fff;margin-bottom:8px}
+.step-sub{font-size:13px;color:var(--muted);line-height:1.5;font-weight:300}
+
+/* ============================================================
+   INDUSTRIES
+============================================================ */
+#industries{padding:130px 0}
+.ind-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.ind-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;position:relative;overflow:hidden;transition:all .3s;display:flex;align-items:center;gap:18px}
+.ind-card:hover{border-color:rgba(0,212,245,.25);background:var(--card2);transform:translateY(-3px)}
+.ind-card:hover .ind-ico-wrap{background:rgba(0,212,245,.18)}
+.ind-ico-wrap{width:48px;height:48px;border-radius:12px;background:rgba(0,212,245,.1);display:flex;align-items:center;justify-content:center;color:var(--cyan);flex-shrink:0;transition:all .3s}
+.ind-name{font-family:var(--font-head);font-size:16px;font-weight:700;color:#fff;margin-bottom:3px}
+.ind-sub{font-size:13px;color:var(--muted);font-weight:300}
+
+/* ============================================================
+   PACKAGES
+============================================================ */
+#packages{padding:130px 0}
+.pkg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.pkg-card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:36px;position:relative;overflow:hidden;transition:all .3s}
+.pkg-card:hover{transform:translateY(-6px);border-color:rgba(0,212,245,.2)}
+.pkg-card.featured{border-color:var(--purple);background:linear-gradient(160deg,rgba(124,58,237,.18),var(--card) 60%);box-shadow:0 0 50px rgba(124,58,237,.18)}
+.pkg-card.featured::before{content:'MOST POPULAR';position:absolute;top:18px;right:18px;font-size:10px;font-weight:700;letter-spacing:1.5px;color:#c4b5fd;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.4);padding:4px 10px;border-radius:999px}
+.pkg-badge{display:inline-block;font-size:12px;font-weight:600;padding:4px 12px;border-radius:999px;margin-bottom:16px}
+.badge-basic{background:rgba(100,116,139,.15);color:#94a3b8;border:1px solid rgba(100,116,139,.25)}
+.badge-std{background:rgba(124,58,237,.15);color:#c4b5fd;border:1px solid rgba(124,58,237,.35)}
+.badge-prem{background:rgba(0,212,245,.1);color:var(--cyan);border:1px solid rgba(0,212,245,.25)}
+.pkg-name{font-family:var(--font-head);font-size:24px;font-weight:800;margin-bottom:8px;color:#fff}
+.pkg-tagline{font-size:14px;color:var(--muted);margin-bottom:28px;font-weight:300}
+.pkg-divider{height:1px;background:var(--border);margin-bottom:24px}
+.pkg-list{list-style:none;display:flex;flex-direction:column;gap:11px;margin-bottom:32px}
+.pkg-list li{font-size:14px;color:var(--muted2);display:flex;align-items:center;gap:10px;font-weight:300}
+.pkg-list li::before{content:'';width:18px;height:18px;flex-shrink:0;border-radius:50%;border:1.5px solid rgba(0,212,245,.5);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300d4f5' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E");background-size:10px;background-repeat:no-repeat;background-position:center}
+.pkg-cta{display:block;text-align:center;padding:13px 24px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;text-decoration:none;transition:all .25s;font-family:var(--font-body)}
+.pkg-cta-o{border:1px solid rgba(255,255,255,.2);color:#fff;background:transparent}
+.pkg-cta-o:hover{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.4)}
+.pkg-cta-p{background:var(--purple);color:#fff;border:none;box-shadow:0 0 20px rgba(124,58,237,.3)}
+.pkg-cta-p:hover{background:var(--purple2);box-shadow:0 0 30px rgba(124,58,237,.6)}
+
+/* ML Platinum package — full-width special tier */
+.pkg-ml-wrap{margin-top:20px}
+.pkg-platinum{
+  background:linear-gradient(135deg,rgba(0,212,245,.08) 0%,rgba(8,18,31,.95) 35%,rgba(124,58,237,.12) 70%,rgba(8,18,31,.98) 100%);
+  border:1px solid rgba(0,212,245,.35)!important;
+  border-radius:20px;
+  padding:40px 48px;
+  display:grid;
+  grid-template-columns:1fr 1.5fr;
+  gap:56px;
+  align-items:start;
+  position:relative;
+  overflow:hidden;
+  box-shadow:0 0 60px rgba(0,212,245,.08),0 0 120px rgba(124,58,237,.06);
+  transition:all .3s
+}
+.pkg-platinum::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,var(--cyan),#a78bfa,var(--cyan));
+  background-size:200%;animation:platShimmer 3s linear infinite
+}
+.pkg-platinum::after{
+  content:'';position:absolute;bottom:-80px;right:-80px;
+  width:300px;height:300px;
+  background:radial-gradient(circle,rgba(0,212,245,.07),transparent 70%);
+  pointer-events:none
+}
+.pkg-platinum:hover{border-color:rgba(0,212,245,.6)!important;box-shadow:0 0 80px rgba(0,212,245,.12),0 0 140px rgba(124,58,237,.08)}
+@keyframes platShimmer{to{background-position:200%}}
+.pkg-plat-top{margin-bottom:20px}
+.badge-plat{
+  background:linear-gradient(135deg,rgba(0,212,245,.15),rgba(124,58,237,.15));
+  color:var(--cyan);
+  border:1px solid rgba(0,212,245,.4)!important;
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+  padding:5px 14px;border-radius:999px
+}
+.pkg-plat-name{
+  font-family:var(--font-head);font-size:32px;font-weight:800;
+  background:linear-gradient(120deg,var(--cyan),#a78bfa);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  margin-bottom:6px
+}
+.pkg-plat-desc{font-size:14px;color:var(--muted2);line-height:1.7;margin-bottom:28px;font-weight:300}
+.pkg-cta-plat{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:13px 28px;border-radius:10px;
+  background:linear-gradient(135deg,rgba(0,212,245,.15),rgba(124,58,237,.2));
+  border:1px solid rgba(0,212,245,.4);
+  color:var(--cyan);font-size:14px;font-weight:700;
+  cursor:pointer;text-decoration:none;transition:all .25s;
+  font-family:var(--font-body);
+  box-shadow:0 0 20px rgba(0,212,245,.1)
+}
+.pkg-cta-plat:hover{
+  background:linear-gradient(135deg,rgba(0,212,245,.25),rgba(124,58,237,.3));
+  border-color:rgba(0,212,245,.7);
+  box-shadow:0 0 30px rgba(0,212,245,.2);
+  transform:translateY(-2px)
+}
+.pkg-cta-plat svg{transition:transform .25s}
+.pkg-cta-plat:hover svg{transform:translateX(4px)}
+.pkg-plat-features{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.pkg-plat-feat{
+  display:flex;align-items:flex-start;gap:12px;
+  padding:16px;border-radius:12px;
+  background:rgba(255,255,255,.025);
+  border:1px solid rgba(0,212,245,.08);
+  transition:all .25s
+}
+.pkg-plat-feat:hover{background:rgba(0,212,245,.05);border-color:rgba(0,212,245,.2)}
+.pkg-plat-feat-ico{
+  width:32px;height:32px;border-radius:8px;flex-shrink:0;
+  background:rgba(0,212,245,.1);border:1px solid rgba(0,212,245,.2);
+  display:flex;align-items:center;justify-content:center;color:var(--cyan)
+}
+.pkg-plat-feat-title{font-size:13px;font-weight:700;color:#fff;margin-bottom:3px}
+.pkg-plat-feat-desc{font-size:12px;color:var(--muted);line-height:1.5;font-weight:300}
+
+/* Platinum responsive */
+@media(max-width:1024px){
+  .pkg-platinum{grid-template-columns:1fr;gap:32px;padding:32px}
+  .pkg-plat-features{grid-template-columns:1fr 1fr}
+}
+@media(max-width:767px){
+  .pkg-platinum{padding:22px 18px;gap:24px}
+  .pkg-plat-name{font-size:26px}
+  .pkg-plat-features{grid-template-columns:1fr}
+}
+
+/* ============================================================
+   WHY
+============================================================ */
+#why{padding:130px 0}
+.why-box{background:var(--card);border:1px solid var(--border);border-radius:24px;padding:64px;position:relative;overflow:hidden}
+.why-box::after{content:'';position:absolute;top:-120px;right:-120px;width:400px;height:400px;background:radial-gradient(circle,rgba(0,212,245,.06),transparent 70%);pointer-events:none;animation:whyOrb 8s ease-in-out infinite}
+@keyframes whyOrb{0%,100%{transform:scale(1) translateY(0)}50%{transform:scale(1.12) translateY(-24px)}}
+.why-ttl{
+  font-family:var(--font-head);
+  font-size:clamp(26px,3.3vw,42px);
+  font-weight:800;
+  line-height:1.1;
+  letter-spacing:-1.2px;
+  margin-bottom:44px;
+  max-width:800px;
+}
+.why-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.why-item{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:12px;padding:22px;display:flex;align-items:center;gap:14px;transition:all .3s}
+.why-item:hover{background:rgba(0,212,245,.05);border-color:rgba(0,212,245,.2);transform:translateY(-2px)}
+.why-item:hover .wi{transform:scale(1.15) rotate(-8deg)}
+.wi{color:var(--cyan);flex-shrink:0;transition:transform .3s}
+.why-txt{font-size:15px;font-weight:600;color:#fff}
+
+/* ============================================================
+   TESTIMONIALS
+============================================================ */
+#testimonials{padding:130px 0}
+.testi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.testi-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:30px;transition:all .3s;position:relative}
+.testi-card:hover{border-color:rgba(0,212,245,.2);transform:translateY(-4px)}
+.testi-quote.{
+  font-family:var(--font-head);
+  font-size:clamp(26px,3.3vw,42px);
+  font-weight:800;
+  line-height:1.1;
+  letter-spacing:-1.2px;
+  margin-bottom:44px;
+  max-width:800px;
+}
+.testi-text{font-size:15px;color:var(--muted2);line-height:1.7;margin-bottom:24px;font-weight:300;font-style:italic}
+.testi-stars{display:flex;gap:3px;margin-bottom:16px}
+.star{color:var(--amber);font-size:14px}
+.testi-author{display:flex;align-items:center;gap:12px}
+.testi-avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0}
+.ta1{background:linear-gradient(135deg,#7c3aed,#06b6d4)}
+.ta2{background:linear-gradient(135deg,#10b981,#3b82f6)}
+.ta3{background:linear-gradient(135deg,#f59e0b,#ef4444)}
+.testi-name{font-size:14px;font-weight:700;color:#fff}
+.testi-role{font-size:12px;color:var(--muted)}
+
+/* ============================================================
+   CTA
+============================================================ */
+#cta{padding:80px 0}
+.cta-box{background:var(--card);border:1px solid var(--border);border-radius:24px;padding:80px;text-align:center;position:relative;overflow:hidden}
+.cta-box::before{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:700px;height:350px;background:radial-gradient(ellipse,rgba(124,58,237,.1),transparent 70%);pointer-events:none;animation:ctaPulse 5s ease-in-out infinite}
+@keyframes ctaPulse{0%,100%{opacity:.5;transform:translate(-50%,-50%) scale(1)}50%{opacity:1;transform:translate(-50%,-50%) scale(1.15)}}
+.cta-ttl{font-family:var(--font-head);font-size:clamp(28px,3.5vw,48px);font-weight:800;letter-spacing:-1.5px;margin-bottom:16px;position:relative;z-index:1}
+.cta-sub{font-size:17px;color:var(--muted2);margin-bottom:36px;position:relative;z-index:1;font-weight:300}
+.cta-btns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;position:relative;z-index:1}
+.btn-cta{display:inline-flex;align-items:center;gap:8px;padding:15px 34px;border:1.5px solid rgba(255,255,255,.35);border-radius:10px;background:transparent;color:#fff;font-size:15px;font-weight:600;cursor:pointer;transition:all .3s;font-family:var(--font-body);text-decoration:none}
+.btn-cta:hover{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.7);transform:translateY(-2px)}
+.btn-cta:hover svg{transform:translateX(5px)}
+.btn-cta svg{transition:transform .25s}
+.btn-cta-p{display:inline-flex;align-items:center;gap:8px;padding:15px 34px;border-radius:10px;background:var(--purple);color:#fff;font-size:15px;font-weight:600;cursor:pointer;border:none;transition:all .3s;font-family:var(--font-body);box-shadow:0 0 24px rgba(124,58,237,.35);text-decoration:none}
+.btn-cta-p:hover{background:var(--purple2);box-shadow:0 0 40px rgba(124,58,237,.6);transform:translateY(-2px)}
+
+/* ============================================================
+   CONTACT
+============================================================ */
+#contact{padding:0 0 130px}
+.contact-box{background:var(--card);border:1px solid var(--border);border-radius:24px;padding:64px;display:grid;grid-template-columns:1fr 1.2fr;gap:72px;position:relative;overflow:hidden}
+.contact-box::before{content:'';position:absolute;bottom:-100px;left:-100px;width:400px;height:400px;background:radial-gradient(circle,rgba(0,212,245,.05),transparent 70%);pointer-events:none}
+.c-eyebrow{font-size:11px;font-weight:700;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.c-eyebrow::before{content:'';width:20px;height:1.5px;background:var(--cyan);display:inline-block}
+.c-ttl{font-family:var(--font-head);font-size:32px;font-weight:800;letter-spacing:-1px;margin-bottom:14px;line-height:1.15}
+.c-desc{font-size:15px;color:var(--muted2);line-height:1.7;margin-bottom:36px;font-weight:300}
+.c-info{display:flex;flex-direction:column;gap:14px;margin-bottom:36px}
+.c-row{font-size:14px;color:var(--muted2);display:flex;align-items:center;gap:10px}
+.c-row a{color:var(--cyan);text-decoration:none}
+.c-row a:hover{text-decoration:underline}
+.c-row-ico{width:36px;height:36px;border-radius:8px;background:rgba(0,212,245,.08);border:1px solid rgba(0,212,245,.15);display:flex;align-items:center;justify-content:center;color:var(--cyan);flex-shrink:0}
+.response-time{display:flex;align-items:center;gap:10px;padding:14px 18px;background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.18);border-radius:10px}
+.rt-dot{width:8px;height:8px;border-radius:50%;background:var(--emerald);animation:pulse 1.5s infinite}
+.rt-txt{font-size:13px;color:var(--muted2)}
+.rt-txt strong{color:var(--emerald)}
+.f-group{display:flex;flex-direction:column;gap:14px}
+.f-row-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.f-inp{width:100%;padding:14px 18px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:10px;color:#fff;font-size:16px;font-family:var(--font-body);outline:none;transition:all .25s;-webkit-appearance:none;appearance:none}
+.f-inp::placeholder{color:rgba(255,255,255,.2)}
+.f-inp:focus{border-color:rgba(0,212,245,.4);background:rgba(0,212,245,.03);box-shadow:0 0 20px rgba(0,212,245,.06)}
+textarea.f-inp{min-height:130px;resize:vertical}
+.btn-submit{width:100%;padding:16px;background:var(--purple);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .25s;font-family:var(--font-body);box-shadow:0 0 24px rgba(124,58,237,.3);position:relative;overflow:hidden}
+.btn-submit:hover{background:var(--purple2);box-shadow:0 0 40px rgba(124,58,237,.6);transform:translateY(-2px)}
+.btn-submit:hover svg{transform:translateX(4px)}
+.btn-submit svg{transition:transform .25s}
+
+/* ============================================================
+   FOOTER
+============================================================ */
+footer{background:#020609;border-top:1px solid var(--border);padding:72px 0 36px}
+.ft-inner{display:grid;grid-template-columns:2.2fr 1fr 1fr 1fr;gap:48px;margin-bottom:56px}
+.ft-logo{font-family:var(--font-head);font-size:20px;font-weight:800;color:#fff;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.ft-logo-dot{width:7px;height:7px;border-radius:50%;background:var(--cyan);box-shadow:0 0 10px var(--cyan)}
+.ft-tag{font-size:14px;color:var(--muted);line-height:1.7;max-width:280px;font-weight:300;margin-bottom:24px}
+.ft-social{display:flex;gap:10px}
+.ft-soc-btn{width:36px;height:36px;border-radius:8px;border:1px solid var(--border);background:transparent;display:flex;align-items:center;justify-content:center;color:var(--muted);text-decoration:none;transition:all .25s}
+.ft-soc-btn:hover{border-color:rgba(0,212,245,.35);color:var(--cyan);background:rgba(0,212,245,.06)}
+.ft-col-head{font-size:11px;font-weight:700;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:18px}
+.ft-links{list-style:none;display:flex;flex-direction:column;gap:11px}
+.ft-links a{font-size:14px;color:var(--muted);text-decoration:none;transition:color .2s,transform .2s;display:inline-block;font-weight:300}
+.ft-links a:hover{color:var(--cyan);transform:translateX(3px)}
+.ft-ci{font-size:14px;color:var(--muted);margin-bottom:8px;font-weight:300}
+.ft-ci a{color:var(--cyan);text-decoration:none}
+.ft-bottom{display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border);padding-top:28px}
+.ft-copy{font-size:13px;color:var(--muted);font-weight:300}
+.ft-badges{display:flex;gap:10px}
+.ft-badge{font-size:11px;font-weight:600;padding:4px 10px;border-radius:999px;border:1px solid var(--border);color:var(--muted)}
+
+/* ============================================================
+   SCROLL ANIMATIONS
+============================================================ */
+.sa{transition:opacity .75s cubic-bezier(.16,1,.3,1),transform .75s cubic-bezier(.16,1,.3,1)}
+.sa-up{opacity:0;transform:translateY(32px)}
+.sa-left{opacity:0;transform:translateX(-40px)}
+.sa-right{opacity:0;transform:translateX(40px)}
+.sa-scale{opacity:0;transform:scale(.92)}
+.sa-in{opacity:1!important;transform:none!important}
+@keyframes rippleA{to{transform:scale(20);opacity:0}}
+
+/* ============================================================
+   RESPONSIVE — Large desktop (1400px+)
+============================================================ */
+@media(min-width:1400px){
+  .container{max-width:1320px}
+  .hero-inner{max-width:1320px}
+}
+
+/* ============================================================
+   RESPONSIVE — Small desktop / tablet landscape (1025–1200px)
+============================================================ */
+@media(max-width:1200px){
+  .container{padding:0 36px}
+  .hero-inner{padding:60px 36px;gap:48px}
+  nav{padding:18px 36px}
+  nav.scrolled{padding:13px 36px}
+  .ft-inner{grid-template-columns:1.8fr 1fr 1fr 1fr;gap:32px}
+}
+
+/* ============================================================
+   RESPONSIVE — Tablet landscape (1025–1024px) — layout adjusts
+   but nav TABS stay visible on all non-phone screens
+============================================================ */
+@media(max-width:1024px){
+  .container{padding:0 28px}
+  .hero-inner{padding:56px 28px;gap:40px}
+  nav{padding:16px 28px}
+  nav.scrolled{padding:12px 28px}
+  /* Nav tabs stay — only shrink font slightly */
+  .nav-link{padding:7px 12px;font-size:13px}
+  #services,#process,#industries,#packages,#why,#testimonials{padding:80px 0}
+  #cta{padding:60px 0}
+  #contact{padding:0 0 80px}
+  .grid3{grid-template-columns:repeat(2,1fr)}
+  .ml-card{grid-template-columns:1fr;gap:32px;padding:32px}
+  .ind-grid{grid-template-columns:repeat(2,1fr)}
+  .pkg-grid{grid-template-columns:repeat(2,1fr)}
+  .testi-grid{grid-template-columns:repeat(2,1fr)}
+  .process-steps{grid-template-columns:repeat(2,1fr)}
+  .process-steps::before{display:none}
+  .why-grid{grid-template-columns:repeat(2,1fr)}
+  .ft-inner{grid-template-columns:1fr 1fr;gap:28px}
+  .contact-box{grid-template-columns:1fr;gap:36px;padding:40px}
+  .why-box,.cta-box{padding:40px}
+}
+
+/* ============================================================
+   RESPONSIVE — Small tablet / large phone (768–900px)
+   Hero card hides, layout tightens — tabs still visible
+============================================================ */
+@media(max-width:900px){
+  .hero-right{display:none}
+  .hero-inner{grid-template-columns:1fr}
+  .hero-desc{max-width:100%}
+  .nav-link{padding:6px 10px;font-size:12px}
+  .btn-nav-o{display:none}
+}
+
+/* ============================================================
+   RESPONSIVE — Mobile only (max 767px)
+   Hamburger replaces tabs. Bar-style fullscreen mobile menu.
+============================================================ */
+@media(max-width:767px){
+  nav{padding:14px 20px;padding-left:max(20px,env(safe-area-inset-left));padding-right:max(20px,env(safe-area-inset-right))}
+  nav.scrolled{padding:11px 20px}
+  .hamburger{display:flex}
+  .nav-links,.btn-nav-o,.btn-nav-p{display:none}
+  .container{padding:0 20px}
+  .hero-inner{grid-template-columns:1fr;padding:40px 20px}
+  .hero-right{display:none}
+  .hero-eyebrow{font-size:10px;padding:5px 12px;margin-bottom:20px}
+  .hero-title{font-size:clamp(30px,8vw,42px);letter-spacing:-1.5px;margin-bottom:18px}
+  .hero-desc{font-size:15px;margin-bottom:28px}
+  .hero-btns{flex-direction:column;align-items:stretch}
+  .btn-hp,.btn-ho{justify-content:center;padding:13px 20px;font-size:14px}
+  .hero-social-proof{gap:10px}
+  #services,#process,#industries,#packages,#why,#testimonials{padding:60px 0}
+  #cta{padding:44px 0}
+  #contact{padding:0 0 60px}
+  .grid3,.ind-grid,.pkg-grid,.testi-grid{grid-template-columns:1fr}
+  .ml-card{grid-template-columns:1fr;padding:22px 18px;gap:24px}
+  .ml-title{font-size:20px}
+  /* Mobile bar-style process steps */
+  .process-steps{grid-template-columns:1fr}
+  .process-steps::before{display:none}
+  .step-card{padding:20px 18px;border:1px solid var(--border);border-radius:14px;background:var(--card);margin-bottom:10px;text-align:left;display:flex;flex-direction:row;align-items:center;gap:16px}
+  .step-ico{margin:0;flex-shrink:0;width:44px;height:44px}
+  .step-num{margin-bottom:0;justify-content:flex-start}
+  .step-text{font-size:15px;margin-bottom:3px}
+  .step-sub{font-size:12px}
+  .why-grid{grid-template-columns:1fr}
+  .why-box{padding:26px 20px}
+  .why-ttl{font-size:clamp(20px,5vw,28px);margin-bottom:28px}
+  .cta-box{padding:32px 20px;border-radius:16px}
+  .cta-ttl{font-size:clamp(22px,6vw,30px)}
+  .cta-sub{font-size:14px}
+  .cta-btns{flex-direction:column;align-items:stretch}
+  .btn-cta,.btn-cta-p{justify-content:center;font-size:14px;padding:13px 20px}
+  .contact-box{grid-template-columns:1fr;padding:22px 18px;gap:28px;border-radius:16px}
+  .c-ttl{font-size:22px}
+  .f-row-2{grid-template-columns:1fr}
+  .sec-title{font-size:clamp(22px,6vw,32px);letter-spacing:-.8px}
+  .sec-desc{font-size:14px;margin-bottom:32px}
+  .ft-inner{grid-template-columns:1fr;gap:28px}
+  .ft-bottom{flex-direction:column;gap:12px;text-align:center}
+  .ft-badges{flex-wrap:wrap;justify-content:center}
+  .trust-bar{display:none}
+  .svc-card{padding:22px 18px}
+  .pkg-card{padding:26px 20px}
+  .pkg-card.featured::before{display:none}
+  .ind-card{padding:18px}
+  .testi-card{padding:22px 18px}
+  .avatar-stack div{width:28px;height:28px;font-size:10px}
+  .hero-social-proof .social-txt{font-size:12px}
+  .metric{padding:14px 12px}
+  .metric-val{font-size:16px}
+  .metric-lbl{font-size:9px}
+  .response-time{flex-wrap:wrap;gap:6px}
+}
+
+/* Large phones (iPhone Pro Max, Galaxy S24+) */
+@media(max-width:430px){
+  .grid3{grid-template-columns:1fr}
+  .testi-grid{grid-template-columns:1fr}
+  .pkg-grid{grid-template-columns:1fr}
+  .hero-title{font-size:clamp(28px,7.5vw,38px)}
+  .cta-box{padding:28px 18px}
+}
+
+/* Small phones (iPhone SE, Galaxy A series) */
+@media(max-width:390px){
+  .hero-title{font-size:27px;letter-spacing:-1px}
+  .hero-btns{gap:8px}
+  .btn-hp,.btn-ho,.btn-cta,.btn-cta-p{padding:11px 14px;font-size:13px}
+  .container{padding:0 14px}
+  nav{padding:12px 14px}
+  .why-box,.cta-box,.contact-box{padding:18px 14px}
+  .sec-title{font-size:21px}
+  .svc-card,.pkg-card,.testi-card{padding:18px 14px}
+  .ft-badges{gap:6px}
+  .ft-badge{font-size:10px;padding:3px 8px}
+}
+
+/* Disable hover transforms on touch devices */
+@media(hover:none) and (pointer:coarse){
+  .svc-card:hover,.ind-card:hover,.pkg-card:hover,.testi-card:hover,
+  .why-item:hover,.step-card:hover{transform:none!important;box-shadow:none}
+  .btn-hp:hover,.btn-ho:hover,.btn-cta:hover,.btn-cta-p:hover,
+  .btn-nav-p:hover,.btn-nav-o:hover{transform:none!important}
+  .svc-card:hover::before{transform:none!important}
+}
+</style>
+</head>
+<body>
+
+<!-- BG CANVAS — fixed behind everything (z-index: 0) -->
+<canvas id="bg-canvas"></canvas>
+<div class="grid-bg"></div>
+<div id="progress-bar"></div>
+
+<!-- NAV — desktop tab-style, mobile hamburger -->
+<nav id="nav">
+  <a href="index.html" class="logo">
+    <span class="logo-dot"></span>
+    AlphaAnalytics
+  </a>
+  <div class="nav-links">
+    <button class="nav-link active" onclick="document.getElementById('services').scrollIntoView({behavior:'smooth'})">Services</button>
+    <button class="nav-link" onclick="document.getElementById('process').scrollIntoView({behavior:'smooth'})">Process</button>
+    <button class="nav-link" onclick="document.getElementById('packages').scrollIntoView({behavior:'smooth'})">Packages</button>
+    <button class="nav-link" onclick="document.getElementById('testimonials').scrollIntoView({behavior:'smooth'})">Reviews</button>
+    <a href="careers.html" class="nav-link careers-link">Careers ↗</a>
+  </div>
+  <div class="nav-right">
+    <a href="careers.html" class="btn-nav-o">We're Hiring</a>
+    <button class="btn-nav-p" onclick="document.getElementById('contact').scrollIntoView({behavior:'smooth'})">Get a Quote</button>
+    <button class="hamburger" id="hamburger" aria-label="Menu" onclick="toggleMenu()">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- MOBILE MENU — bar-style fullscreen overlay -->
+<div class="mobile-menu" id="mobileMenu">
+  <button class="mobile-menu-link" onclick="closeMobileNav('services')">Services</button>
+  <button class="mobile-menu-link" onclick="closeMobileNav('process')">Process</button>
+  <button class="mobile-menu-link" onclick="closeMobileNav('packages')">Packages</button>
+  <button class="mobile-menu-link" onclick="closeMobileNav('testimonials')">Reviews</button>
+  <div class="mobile-menu-divider"></div>
+  <a href="careers.html" class="mobile-menu-link cyan">Careers ↗</a>
+  <button class="mobile-menu-btn" onclick="closeMobileNav('contact')">Get a Quote</button>
+</div>
+
+<!-- ============================================================
+     HERO
+============================================================ -->
+<section id="hero">
+  <div class="hero-inner">
+    <div class="hero-left">
+      <div class="hero-eyebrow">
+        <span class="hero-eyebrow-dot"></span>
+        Professional Data Analytics Team
+      </div>
+      <h1 class="hero-title">Turn Raw Data Into<br><span class="hl">Clear Business</span><br>Decisions</h1>
+      <p class="hero-desc">We help businesses clean, analyze, and visualize their data to uncover actionable insights and drive smarter decisions — fast.</p>
+      <div class="hero-btns">
+        <button class="btn-hp" onclick="document.getElementById('services').scrollIntoView({behavior:'smooth'})">
+          View Services
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </button>
+        <button class="btn-ho" onclick="document.getElementById('contact').scrollIntoView({behavior:'smooth'})">Get a Free Quote</button>
+      </div>
+      <div class="hero-social-proof">
+        <div class="avatar-stack">
+          <div class="a1">SK</div>
+          <div class="a2">MR</div>
+          <div class="a3">PA</div>
+          <div class="a4">JK</div>
+        </div>
+        <span class="social-txt"><strong>50+ clients</strong> trust AlphaAnalytics</span>
+      </div>
+    </div>
+    <!-- HERO CARD — animated SVG graph (from ORIGINAL file) -->
+    <div class="hero-right">
+      <div class="hero-card">
+        <div class="hero-img">
+          <svg viewBox="0 0 560 260" style="width:100%;height:100%">
+            <defs>
+              <filter id="gc"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+              <filter id="gp"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+              <linearGradient id="areaGrad1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#00d4f5" stop-opacity="0.2"/><stop offset="100%" stop-color="#00d4f5" stop-opacity="0"/></linearGradient>
+              <linearGradient id="areaGrad2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#d946ef" stop-opacity="0.15"/><stop offset="100%" stop-color="#d946ef" stop-opacity="0"/></linearGradient>
+            </defs>
+            <rect width="560" height="260" fill="#060a14"/>
+            <!-- Grid lines -->
+            <line x1="0" y1="65" x2="560" y2="65" stroke="rgba(255,255,255,.04)" stroke-width="1"/>
+            <line x1="0" y1="130" x2="560" y2="130" stroke="rgba(255,255,255,.04)" stroke-width="1"/>
+            <line x1="0" y1="195" x2="560" y2="195" stroke="rgba(255,255,255,.04)" stroke-width="1"/>
+            <!-- Area fills -->
+            <polygon points="0,220 80,180 160,200 240,130 320,155 400,95 480,120 560,80 560,260 0,260" fill="url(#areaGrad1)" opacity="0.6"/>
+            <polygon points="0,240 80,210 160,230 240,165 320,185 400,145 480,160 560,130 560,260 0,260" fill="url(#areaGrad2)" opacity="0.5"/>
+            <!-- Animated graph lines -->
+            <polyline class="nline" points="0,220 80,180 160,200 240,130 320,155 400,95 480,120 560,80" fill="none" stroke="#00d4f5" stroke-width="2.5" filter="url(#gc)"/>
+            <polyline class="nline" points="0,240 80,210 160,230 240,165 320,185 400,145 480,160 560,130" fill="none" stroke="#d946ef" stroke-width="2" filter="url(#gp)" style="animation-delay:.3s"/>
+            <!-- Animated data points -->
+            <circle class="pdot" cx="240" cy="130" r="5" fill="#00d4f5" filter="url(#gc)"/>
+            <circle class="pdot" cx="400" cy="95" r="4" fill="#00d4f5" filter="url(#gc)" style="animation-delay:.6s"/>
+            <circle class="pdot" cx="480" cy="120" r="5" fill="#00d4f5" filter="url(#gc)" style="animation-delay:1.2s"/>
+            <!-- Labels -->
+            <text x="248" y="118" fill="#00d4f5" font-size="10" font-weight="700" text-anchor="middle" opacity=".8">+32%</text>
+            <text x="408" y="83" fill="#00d4f5" font-size="10" font-weight="700" text-anchor="middle" opacity=".8">Peak</text>
+            <!-- Mini bar chart -->
+            <rect x="40" y="195" width="14" height="25" rx="2" fill="rgba(0,212,245,.35)"/>
+            <rect x="58" y="185" width="14" height="35" rx="2" fill="rgba(0,212,245,.5)"/>
+            <rect x="76" y="172" width="14" height="48" rx="2" fill="rgba(0,212,245,.7)"/>
+          </svg>
+        </div>
+        <div class="hero-metrics">
+          <div class="metric">
+            <div class="metric-val c">5–7 Days</div>
+            <div class="metric-lbl">Avg Delivery</div>
+          </div>
+          <div class="metric">
+            <div class="metric-val e">98%</div>
+            <div class="metric-lbl">Client Satisfaction</div>
+            <span class="metric-badge up">↑</span>
+          </div>
+          <div class="metric">
+            <div class="metric-val">50+</div>
+            <div class="metric-lbl">Projects Delivered</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TRUST BAR -->
+<div class="trust-bar">
+  <div class="trust-track">
+    <span class="trust-item"><span class="trust-dot"></span>Power BI Dashboards</span>
+    <span class="trust-item"><span class="trust-dot"></span>ML Data Preparation</span>
+    <span class="trust-item"><span class="trust-dot"></span>SQL Data Work</span>
+    <span class="trust-item"><span class="trust-dot"></span>Feature Engineering</span>
+    <span class="trust-item"><span class="trust-dot"></span>Excel Automation</span>
+    <span class="trust-item"><span class="trust-dot"></span>Python Analytics</span>
+    <span class="trust-item"><span class="trust-dot"></span>Data Cleaning</span>
+    <span class="trust-item"><span class="trust-dot"></span>EDA Reports</span>
+    <span class="trust-item"><span class="trust-dot"></span>Train/Test Pipelines</span>
+    <span class="trust-item"><span class="trust-dot"></span>Data Storytelling</span>
+    <!-- Duplicated for seamless loop -->
+    <span class="trust-item"><span class="trust-dot"></span>Power BI Dashboards</span>
+    <span class="trust-item"><span class="trust-dot"></span>ML Data Preparation</span>
+    <span class="trust-item"><span class="trust-dot"></span>SQL Data Work</span>
+    <span class="trust-item"><span class="trust-dot"></span>Feature Engineering</span>
+    <span class="trust-item"><span class="trust-dot"></span>Excel Automation</span>
+    <span class="trust-item"><span class="trust-dot"></span>Python Analytics</span>
+    <span class="trust-item"><span class="trust-dot"></span>Data Cleaning</span>
+    <span class="trust-item"><span class="trust-dot"></span>EDA Reports</span>
+    <span class="trust-item"><span class="trust-dot"></span>Train/Test Pipelines</span>
+    <span class="trust-item"><span class="trust-dot"></span>Data Storytelling</span>
+  </div>
+</div>
+
+<!-- ============================================================
+     SERVICES
+============================================================ -->
+<section id="services">
+  <div class="container">
+    <p class="sec-eyebrow">Services</p>
+    <h2 class="sec-title">Analytics Built for Real Business Outcomes</h2>
+    <p class="sec-desc">From raw spreadsheets to executive-ready dashboards — and full ML data preparation pipelines — we deliver structured analytics support for every stage of your data workflow.</p>
+    <div class="grid3">
+      <div class="svc-card">
+        <div class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg></div>
+        <div class="svc-title">Data Cleaning & Preparation</div>
+        <div class="svc-desc">We transform messy, inconsistent data into clean, structured datasets ready for analysis.</div>
+        <ul class="svc-list"><li>Cleaning messy Excel or CSV data</li><li>Handling missing values and duplicates</li><li>Standardizing formats</li><li>Merging multiple datasets</li></ul>
+      </div>
+      <div class="svc-card">
+        <div class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
+        <div class="svc-title">Exploratory Data Analysis</div>
+        <div class="svc-desc">Uncover patterns, trends, and business opportunities hidden within your data.</div>
+        <ul class="svc-list"><li>Statistical summaries</li><li>Trend and correlation analysis</li><li>Business insights reports</li><li>Data storytelling</li></ul>
+      </div>
+      <div class="svc-card">
+        <div class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></div>
+        <div class="svc-title">Dashboard Creation</div>
+        <div class="svc-desc">Interactive Power BI dashboards that give you live visibility into your KPIs.</div>
+        <ul class="svc-list"><li>Interactive Power BI dashboards</li><li>Sales and KPI dashboards</li><li>Financial performance dashboards</li><li>Marketing analytics dashboards</li></ul>
+      </div>
+      <div class="svc-card">
+        <div class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg></div>
+        <div class="svc-title">SQL Data Work</div>
+        <div class="svc-desc">Optimized queries, database reporting and transformations delivered at scale.</div>
+        <ul class="svc-list"><li>Data extraction</li><li>Query optimization</li><li>Database reporting</li><li>Data transformation</li></ul>
+      </div>
+      <div class="svc-card">
+        <div class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+        <div class="svc-title">Excel Automation</div>
+        <div class="svc-desc">Eliminate manual work with advanced formulas, Power Query and VBA automation.</div>
+        <ul class="svc-list"><li>Automated reports</li><li>Dynamic templates</li><li>Pivot tables and Power Query</li><li>Advanced formulas</li></ul>
+      </div>
+      <div class="svc-card">
+        <div class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+        <div class="svc-title">Data Visualization</div>
+        <div class="svc-desc">Presentation-ready charts and visuals that tell your data story clearly.</div>
+        <ul class="svc-list"><li>Professional charts</li><li>Business storytelling visuals</li><li>Presentation-ready reports</li></ul>
+      </div>
+    </div>
+
+    <!-- ML Featured Card (NEW file addition) -->
+    <div class="ml-card">
+      <div class="ml-card-left">
+        <div class="ml-badge">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          New Service
+        </div>
+        <div class="ml-ico">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+          </svg>
+        </div>
+        <h3 class="ml-title">ML Data Preparation Services</h3>
+        <p class="ml-desc">We prepare your raw data to be fully model-ready — every step a data scientist needs before training, handled by our team. No model training required on your end.</p>
+      </div>
+      <div class="ml-card-right">
+        <div class="ml-steps">
+          <div class="ml-step">
+            <div class="ml-step-num">01</div>
+            <div class="ml-step-body">
+              <div class="ml-step-title">Data Preprocessing</div>
+              <div class="ml-step-desc">Handle missing values, remove duplicates, fix data types and outliers</div>
+            </div>
+          </div>
+          <div class="ml-step">
+            <div class="ml-step-num">02</div>
+            <div class="ml-step-body">
+              <div class="ml-step-title">Feature Engineering</div>
+              <div class="ml-step-desc">Create meaningful new features from existing data to improve model accuracy</div>
+            </div>
+          </div>
+          <div class="ml-step">
+            <div class="ml-step-num">03</div>
+            <div class="ml-step-body">
+              <div class="ml-step-title">Encoding</div>
+              <div class="ml-step-desc">Label encoding and One-Hot encoding for categorical variables</div>
+            </div>
+          </div>
+          <div class="ml-step">
+            <div class="ml-step-num">04</div>
+            <div class="ml-step-body">
+              <div class="ml-step-title">Scaling & Normalisation</div>
+              <div class="ml-step-desc">StandardScaler, MinMaxScaler and RobustScaler applied correctly per feature</div>
+            </div>
+          </div>
+          <div class="ml-step">
+            <div class="ml-step-num">05</div>
+            <div class="ml-step-body">
+              <div class="ml-step-title">EDA Before Modelling</div>
+              <div class="ml-step-desc">Full exploratory analysis — distributions, correlations, class balance checks</div>
+            </div>
+          </div>
+          <div class="ml-step">
+            <div class="ml-step-num">06</div>
+            <div class="ml-step-body">
+              <div class="ml-step-title">Train / Test Split & Pipeline</div>
+              <div class="ml-step-desc">Stratified splitting, cross-validation setup and end-to-end sklearn pipeline</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     PROCESS
+============================================================ -->
+<section id="process">
+  <div class="container">
+    <p class="sec-eyebrow">How We Work</p>
+    <h2 class="sec-title">A Clear 4-Step Process</h2>
+    <p class="sec-desc">Transparent, collaborative and efficient — we keep you in control at every stage of the analytics workflow.</p>
+    <div class="process-steps">
+      <div class="step-card">
+        <div class="step-num"><span class="step-num-dot"></span>Step 01</div>
+        <div class="step-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+        <div class="step-text">Understand Your Data Problem</div>
+        <div class="step-sub">Discovery call to align on goals, scope and deliverables</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num"><span class="step-num-dot"></span>Step 02</div>
+        <div class="step-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg></div>
+        <div class="step-text">Clean & Organize Data</div>
+        <div class="step-sub">We prepare your data so it's reliable, structured and analysis-ready</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num"><span class="step-num-dot"></span>Step 03</div>
+        <div class="step-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+        <div class="step-text">Analyze & Discover Insights</div>
+        <div class="step-sub">Deep analysis to surface trends, patterns and opportunities</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num"><span class="step-num-dot"></span>Step 04</div>
+        <div class="step-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></div>
+        <div class="step-text">Deliver Dashboards & Reports</div>
+        <div class="step-sub">Polished, presentation-ready outputs delivered within 5–7 days</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     INDUSTRIES
+============================================================ -->
+<section id="industries">
+  <div class="container">
+    <p class="sec-eyebrow">Industries</p>
+    <h2 class="sec-title">Trusted Across High-Impact Business Functions</h2>
+    <p class="sec-desc">We bring domain knowledge and analytics expertise to every sector we serve.</p>
+    <div class="ind-grid">
+      <div class="ind-card"><div class="ind-ico-wrap"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></div><div class="ind-info"><div class="ind-name">E-commerce</div><div class="ind-sub">Sales analytics, conversion tracking</div></div></div>
+      <div class="ind-card"><div class="ind-ico-wrap"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div><div class="ind-info"><div class="ind-name">Retail</div><div class="ind-sub">Inventory, demand forecasting</div></div></div>
+      <div class="ind-card"><div class="ind-ico-wrap"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div><div class="ind-info"><div class="ind-name">Marketing Agencies</div><div class="ind-sub">Campaign analytics, ROI reporting</div></div></div>
+      <div class="ind-card"><div class="ind-ico-wrap"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="2"/><line x1="14" y1="18" x2="14" y2="7"/><line x1="18" y1="18" x2="18" y2="13"/></svg></div><div class="ind-info"><div class="ind-name">Finance Startups</div><div class="ind-sub">Financial modelling, reporting</div></div></div>
+      <div class="ind-card"><div class="ind-ico-wrap"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><div class="ind-info"><div class="ind-name">HR Departments</div><div class="ind-sub">Workforce analytics, attrition</div></div></div>
+      <div class="ind-card"><div class="ind-ico-wrap"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><rect x="9" y="14" width="6" height="8"/></svg></div><div class="ind-info"><div class="ind-name">Real Estate</div><div class="ind-sub">Market analysis, property data</div></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     PACKAGES
+============================================================ -->
+<section id="packages">
+  <div class="container">
+    <p class="sec-eyebrow">Packages</p>
+    <h2 class="sec-title">Flexible Engagement Plans</h2>
+    <p class="sec-desc">From your first analytics project to full ML data preparation pipelines — every plan is tailored to your needs.</p>
+
+    <!-- Top 3 standard packages -->
+    <div class="pkg-grid">
+      <div class="pkg-card">
+        <span class="pkg-badge badge-basic">Starter</span>
+        <div class="pkg-name">Basic</div>
+        <div class="pkg-tagline">Perfect for a first analytics project</div>
+        <div class="pkg-divider"></div>
+        <ul class="pkg-list">
+          <li>Data cleaning & formatting</li>
+          <li>Summary statistics report</li>
+          <li>Basic charts & visuals</li>
+          <li>PDF deliverable</li>
+        </ul>
+        <a href="#contact" class="pkg-cta pkg-cta-o" onclick="document.getElementById('contact').scrollIntoView({behavior:'smooth'});return false">Get Started</a>
+      </div>
+      <div class="pkg-card featured">
+        <span class="pkg-badge badge-std">Standard</span>
+        <div class="pkg-name">Standard</div>
+        <div class="pkg-tagline">Most popular for growing businesses</div>
+        <div class="pkg-divider"></div>
+        <ul class="pkg-list">
+          <li>Full exploratory data analysis</li>
+          <li>Business insights & recommendations</li>
+          <li>5–10 professional visualizations</li>
+          <li>PDF + Excel report</li>
+          <li>1 revision round</li>
+        </ul>
+        <a href="#contact" class="pkg-cta pkg-cta-p" onclick="document.getElementById('contact').scrollIntoView({behavior:'smooth'});return false">Get Started</a>
+      </div>
+      <div class="pkg-card">
+        <span class="pkg-badge badge-prem">Premium</span>
+        <div class="pkg-name">Premium</div>
+        <div class="pkg-tagline">Full-service analytics solution</div>
+        <div class="pkg-divider"></div>
+        <ul class="pkg-list">
+          <li>Data cleaning + advanced EDA</li>
+          <li>Interactive Power BI dashboard</li>
+          <li>Business recommendations deck</li>
+          <li>Presentation-ready report</li>
+          <li>2 revision rounds + support</li>
+        </ul>
+        <a href="#contact" class="pkg-cta pkg-cta-o" onclick="document.getElementById('contact').scrollIntoView({behavior:'smooth'});return false">Get Started</a>
+      </div>
+    </div>
+
+    <!-- ML Platinum — Full-width special tier -->
+    <div class="pkg-ml-wrap">
+      <div class="pkg-card pkg-platinum">
+        <div class="pkg-platinum-left">
+          <div class="pkg-plat-top">
+            <span class="pkg-badge badge-plat">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+              Platinum
+            </span>
+          </div>
+          <div class="pkg-name pkg-plat-name">ML Data Prep</div>
+          <div class="pkg-tagline">For teams building machine learning models</div>
+          <div class="pkg-divider"></div>
+          <p class="pkg-plat-desc">We handle every data science step before model training — so your ML team gets a clean, fully prepared dataset, ready to plug into any framework. No data science experience needed on your end.</p>
+          <a href="#contact" class="pkg-cta pkg-cta-plat" onclick="document.getElementById('contact').scrollIntoView({behavior:'smooth'});return false">
+            Request ML Package
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </a>
+        </div>
+        <div class="pkg-platinum-right">
+          <div class="pkg-plat-features">
+            <div class="pkg-plat-feat">
+              <div class="pkg-plat-feat-ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg></div>
+              <div><div class="pkg-plat-feat-title">Data Preprocessing</div><div class="pkg-plat-feat-desc">Missing values, duplicates, type fixes & outlier treatment</div></div>
+            </div>
+            <div class="pkg-plat-feat">
+              <div class="pkg-plat-feat-ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 12l10 5 10-5"/></svg></div>
+              <div><div class="pkg-plat-feat-title">Feature Engineering</div><div class="pkg-plat-feat-desc">Create powerful new features to improve model accuracy</div></div>
+            </div>
+            <div class="pkg-plat-feat">
+              <div class="pkg-plat-feat-ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></div>
+              <div><div class="pkg-plat-feat-title">Encoding & Scaling</div><div class="pkg-plat-feat-desc">One-Hot, Label encoding + StandardScaler / MinMaxScaler</div></div>
+            </div>
+            <div class="pkg-plat-feat">
+              <div class="pkg-plat-feat-ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
+              <div><div class="pkg-plat-feat-title">EDA Before Modelling</div><div class="pkg-plat-feat-desc">Distributions, correlations & class balance checks</div></div>
+            </div>
+            <div class="pkg-plat-feat">
+              <div class="pkg-plat-feat-ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+              <div><div class="pkg-plat-feat-title">Train / Test Split & Pipeline</div><div class="pkg-plat-feat-desc">Stratified splits, cross-validation & sklearn pipeline</div></div>
+            </div>
+            <div class="pkg-plat-feat">
+              <div class="pkg-plat-feat-ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+              <div><div class="pkg-plat-feat-title">Full Documentation</div><div class="pkg-plat-feat-desc">Commented notebook + PDF report of every transformation</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     WHY
+============================================================ -->
+<section id="why">
+  <div class="container">
+    <div class="why-box">
+      <p class="sec-eyebrow">Why AlphaAnalytics</p>
+      <h2 class="why-ttl">Reliable Analytics Support for Teams That Need Clarity Fast</h2>
+      <div class="why-grid">
+        <div class="why-item"><span class="wi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg></span><span class="why-txt">Data-driven insights, not guesswork</span></div>
+        <div class="why-item"><span class="wi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg></span><span class="why-txt">Clean and reliable analysis</span></div>
+        <div class="why-item"><span class="wi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span><span class="why-txt">Professional dashboards</span></div>
+        <div class="why-item"><span class="wi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span><span class="why-txt">Fast 5–7 day turnaround</span></div>
+        <div class="why-item"><span class="wi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span><span class="why-txt">Business-focused results</span></div>
+        <div class="why-item"><span class="wi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></span><span class="why-txt">Dedicated freelance team</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     TESTIMONIALS
+============================================================ -->
+<section id="testimonials">
+  <div class="container">
+    <p class="sec-eyebrow">Client Reviews</p>
+    <h2 class="sec-title">What Our Clients Say</h2>
+    <p class="sec-desc">Real feedback from real businesses who've turned their data into decisions with AlphaAnalytics.</p>
+    <div class="testi-grid">
+      <div class="testi-card">
+        <div class="testi-quote">"</div>
+        <div class="testi-stars"><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span></div>
+        <p class="testi-text">AlphaAnalytics delivered a Power BI dashboard that gave us real-time visibility into our sales funnel. Turnaround was incredibly fast and the quality was exceptional.</p>
+        <div class="testi-author">
+          <div class="testi-avatar ta1">SK</div>
+          <div><div class="testi-name">Sanjay Kumar</div><div class="testi-role">E-commerce Founder</div></div>
+        </div>
+      </div>
+      <div class="testi-card">
+        <div class="testi-quote">"</div>
+        <div class="testi-stars"><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span></div>
+        <p class="testi-text">They cleaned 3 years of messy HR data and built us an attrition analysis in under a week. The insights helped us reduce turnover by 18%.</p>
+        <div class="testi-author">
+          <div class="testi-avatar ta2">MR</div>
+          <div><div class="testi-name">Meena Rao</div><div class="testi-role">HR Director, Mid-size Firm</div></div>
+        </div>
+      </div>
+      <div class="testi-card">
+        <div class="testi-quote">"</div>
+        <div class="testi-stars"><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span></div>
+        <p class="testi-text">Our marketing reports used to take days to compile. Now we have an automated Excel dashboard that refreshes in seconds. Highly recommend this team.</p>
+        <div class="testi-author">
+          <div class="testi-avatar ta3">JK</div>
+          <div><div class="testi-name">Jaspreet Kaur</div><div class="testi-role">Marketing Agency Owner</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     CTA
+============================================================ -->
+<section id="cta">
+  <div class="container">
+    <div class="cta-box">
+      <h2 class="cta-ttl">Ready to Turn Your Data Into Insights?</h2>
+      <p class="cta-sub">Let's discuss your data challenge and find the right solution together.</p>
+      <div class="cta-btns">
+        <button class="btn-cta-p" onclick="document.getElementById('contact').scrollIntoView({behavior:'smooth'})">
+          Get a Free Quote
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </button>
+        <a href="careers.html" class="btn-cta">Join Our Team →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     CONTACT
+============================================================ -->
+<section id="contact">
+  <div class="container">
+    <div class="contact-box">
+      <div>
+        <p class="c-eyebrow">Get a Quote</p>
+        <h2 class="c-ttl">Tell us about your data project</h2>
+        <p class="c-desc">Share your challenge and we'll suggest the right service package and delivery plan tailored to your business.</p>
+        <div class="c-info">
+          <div class="c-row">
+            <div class="c-row-ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
+            <a href="mailto:alphaanalyticssolutions@gmail.com">alphaanalyticssolutions@gmail.com</a>
+          </div>
+          <div class="c-row">
+            <div class="c-row-ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
+            <span>Based in India — Serving clients worldwide</span>
+          </div>
+        </div>
+        <div class="response-time">
+          <span class="rt-dot"></span>
+          <span class="rt-txt">We typically respond within <strong>2–4 hours</strong> on business days</span>
+        </div>
+      </div>
+      <div>
+        <div class="f-group" id="contactForm">
+          <div class="f-row-2">
+            <input type="text" class="f-inp" id="f-name" placeholder="Your full name" required>
+            <input type="email" class="f-inp" id="f-email" placeholder="Work email" required>
+          </div>
+          <input type="text" class="f-inp" id="f-company" placeholder="Company name (optional)">
+          <textarea class="f-inp" id="f-message" placeholder="Briefly describe your data challenge…" required></textarea>
+          <button class="btn-submit" id="submitBtn" type="button">
+            Send Quote Request
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </button>
+          <div id="form-msg" style="display:none;padding:14px;border-radius:10px;font-size:14px;font-weight:600;text-align:center"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     FOOTER
+============================================================ -->
+<footer>
+  <div class="container">
+    <div class="ft-inner">
+      <div>
+        <div class="ft-logo"><span class="ft-logo-dot"></span>AlphaAnalytics</div>
+        <div class="ft-tag">Freelance data analytics team helping businesses improve decisions with reliable, fast data workflows.</div>
+        <div class="ft-social">
+          <a href="mailto:alphaanalyticssolutions@gmail.com" class="ft-soc-btn" title="Email">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          </a>
+          <a href="https://linkedin.com" class="ft-soc-btn" title="LinkedIn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+          </a>
+        </div>
+      </div>
+      <div>
+        <div class="ft-col-head">Services</div>
+        <ul class="ft-links">
+          <li><a href="#services" onclick="document.getElementById('services').scrollIntoView({behavior:'smooth'});return false">Data Cleaning</a></li>
+          <li><a href="#services" onclick="document.getElementById('services').scrollIntoView({behavior:'smooth'});return false">EDA Reports</a></li>
+          <li><a href="#services" onclick="document.getElementById('services').scrollIntoView({behavior:'smooth'});return false">Power BI Dashboards</a></li>
+          <li><a href="#services" onclick="document.getElementById('services').scrollIntoView({behavior:'smooth'});return false">ML Data Preparation</a></li>
+          <li><a href="#services" onclick="document.getElementById('services').scrollIntoView({behavior:'smooth'});return false">Excel Automation</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="ft-col-head">Company</div>
+        <ul class="ft-links">
+          <li><a href="#why" onclick="document.getElementById('why').scrollIntoView({behavior:'smooth'});return false">About Us</a></li>
+          <li><a href="#packages" onclick="document.getElementById('packages').scrollIntoView({behavior:'smooth'});return false">Packages</a></li>
+          <li><a href="careers.html">Careers</a></li>
+          <li><a href="#contact" onclick="document.getElementById('contact').scrollIntoView({behavior:'smooth'});return false">Contact</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="ft-col-head">Contact</div>
+        <div class="ft-ci"><a href="mailto:alphaanalyticssolutions@gmail.com">alphaanalyticssolutions@gmail.com</a></div>
+        <div class="ft-ci">India · Remote Worldwide</div>
+        <div class="ft-ci">LinkedIn: Coming soon</div>
+      </div>
+    </div>
+    <div class="ft-bottom">
+      <div class="ft-copy">© 2026 AlphaAnalytics. All rights reserved.</div>
+      <div class="ft-badges">
+        <span class="ft-badge">🇮🇳 India Based</span>
+        <span class="ft-badge">🌐 Remote Ready</span>
+        <span class="ft-badge">⚡ Fast Delivery</span>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+// ============================================================
+// MOBILE MENU (from NEW file)
+// ============================================================
+function toggleMenu(){
+  var h=document.getElementById('hamburger'),m=document.getElementById('mobileMenu');
+  h.classList.toggle('open');
+  m.classList.toggle('open');
+  document.body.style.overflow=m.classList.contains('open')?'hidden':'';
+}
+function closeMobileNav(id){
+  document.getElementById('hamburger').classList.remove('open');
+  document.getElementById('mobileMenu').classList.remove('open');
+  document.body.style.overflow='';
+  setTimeout(function(){document.getElementById(id).scrollIntoView({behavior:'smooth'})},100);
+}
+document.addEventListener('keydown',function(e){
+  if(e.key==='Escape'){
+    document.getElementById('hamburger').classList.remove('open');
+    document.getElementById('mobileMenu').classList.remove('open');
+    document.body.style.overflow='';
+  }
+});
+
+// ============================================================
+// BACKGROUND CANVAS ANIMATION
+// Enhanced version from BEFORE ORIGINAL file — stars, nebulas,
+// orbs, node network, mouse parallax, and meteor trails
+// ============================================================
+// ── DEEP SPACE CANVAS BACKGROUND (FROM BEFORE ORIGINAL) ──
+(function(){
+  var CV=document.getElementById('bg-canvas');
+  if(!CV) return;
+  var CX=CV.getContext('2d');
+  var W=0, H=0, MX=0, MY=0, TMX=0, TMY=0, T=0;
+
+  function bgResize() {
+    W = window.innerWidth;
+    H = window.innerHeight;
+    CV.width = W;
+    CV.height = H;
+  }
+  bgResize();
+  window.addEventListener('resize', bgResize);
+  document.addEventListener('mousemove', function(e){ MX = e.clientX; MY = e.clientY; });
+  var STARS = [];
+  for (var i = 0; i < 280; i++) {
+    STARS.push({
+      x: Math.random(), y: Math.random(),
+      r: Math.random() * 1.3 + 0.2,
+      a: Math.random() * 0.65 + 0.15,
+      tw: Math.random() * 6.28,
+      ts: Math.random() * 0.03 + 0.005,
+      col: ['255,255,255','0,212,245','155,93,229','99,102,241'][Math.floor(Math.random()*4)],
+      d: Math.random() * 3 + 0.5
+    });
+  }
+
+  var NEBULAS = [
+    { x:0.15, y:0.35, rx:220, ry:130, col:'0,212,245',   a:0.028, ang:0.3  },
+    { x:0.78, y:0.55, rx:260, ry:150, col:'124,58,237',  a:0.025, ang:1.1  },
+    { x:0.45, y:0.75, rx:200, ry:110, col:'13,136,255',  a:0.022, ang:2.0  },
+    { x:0.85, y:0.2,  rx:180, ry:100, col:'217,70,239',  a:0.020, ang:0.7  },
+  ];
+
+  var BANDS = [
+    { yB:0.58, amp:0.08, freq:1.0, spd:0.22, ph:0.0, c:'0,212,245'   },
+    { yB:0.65, amp:0.06, freq:0.7, spd:0.16, ph:2.1, c:'124,58,237'  },
+    { yB:0.52, amp:0.10, freq:1.3, spd:0.30, ph:4.2, c:'13,136,255'  },
+    { yB:0.70, amp:0.05, freq:0.5, spd:0.12, ph:1.0, c:'217,70,239'  },
+  ];
+  var ORBS = [];
+  for (var i = 0; i < 5; i++) {
+    ORBS.push({
+      x: Math.random(), y: Math.random(),
+      r: 90 + Math.random() * 130,
+      sx: (Math.random()-0.5)*0.0005,
+      sy: (Math.random()-0.5)*0.0004,
+      a: 0.05 + Math.random()*0.07,
+      col: ['0,212,245','124,58,237','217,70,239','13,136,255','99,102,241'][i],
+      ph: Math.random()*6.28
+    });
+  }
+
+  var NODES = [];
+  for (var i = 0; i < 50; i++) {
+    NODES.push({
+      x: Math.random(), y: Math.random(),
+      vx: (Math.random()-0.5)*0.00015,
+      vy: (Math.random()-0.5)*0.00015,
+      r: Math.random()*1.6+0.4,
+      a: Math.random()*0.45+0.2,
+      col: Math.random()>0.5?'0,212,245':'124,58,237'
+    });
+  }
+
+  var METEORS = [];
+  function spawnMeteor() {
+    METEORS.push({ x:Math.random()*1.2-0.1, y:Math.random()*0.4, spd:0.005+Math.random()*0.006, len:0.07+Math.random()*0.09, a:0.7+Math.random()*0.3, life:0, max:55+Math.random()*55 });
+  }
+  spawnMeteor(); spawnMeteor();
+
+  function bgDraw() {
+    requestAnimationFrame(bgDraw);
+    T += 0.011;
+
+    TMX += (MX/W - 0.5 - TMX) * 0.035;
+    TMY += (MY/H - 0.5 - TMY) * 0.035;
+
+    CX.fillStyle = '#03080f';
+    CX.fillRect(0, 0, W, H);
+
+    // NEBULA BLOBS
+    for (var i = 0; i < NEBULAS.length; i++) {
+      var n = NEBULAS[i];
+      var px = n.x*W + TMX*28*(i*0.4+0.6);
+      var py = n.y*H + TMY*18*(i*0.3+0.5);
+      CX.save();
+      CX.translate(px, py);
+      CX.rotate(n.ang + T*0.008);
+      CX.scale(1, n.ry/n.rx);
+      var g = CX.createRadialGradient(0,0,0,0,0,n.rx);
+      g.addColorStop(0,   'rgba('+n.col+','+n.a+')');
+      g.addColorStop(0.5, 'rgba('+n.col+','+(n.a*0.35)+')');
+      g.addColorStop(1,   'rgba('+n.col+',0)');
+      CX.beginPath(); CX.arc(0,0,n.rx,0,6.28);
+      CX.fillStyle = g; CX.fill();
+      CX.restore();
+    }
+    // AURORA BANDS
+    for (var bi = 0; bi < BANDS.length; bi++) {
+      var b = BANDS[bi];
+      var px0 = TMX * 30 * (bi*0.3+0.4);
+      CX.save();
+      for (var pass = 0; pass < 2; pass++) {
+        var al = pass===0 ? 0.07 : 0.11;
+        var spread = pass===0 ? H*0.20 : H*0.09;
+        CX.beginPath();
+        CX.moveTo(-W*0.05+px0, H);
+        for (var s = 0; s <= 80; s++) {
+          var sx = (s/80)*W*1.1 - W*0.05 + px0;
+          var wave = Math.sin(s/80*6.28*b.freq + T*b.spd + b.ph) * b.amp * H;
+          wave += Math.sin(s/80*6.28*b.freq*2.3 + T*b.spd*1.5 + b.ph+1) * b.amp*0.35*H;
+          var sy = b.yB*H + wave + TMY*22*(bi*0.35+0.3);
+          CX.lineTo(sx, sy);
+        }
+        CX.lineTo(W*1.05+px0, H); CX.closePath();
+        var gy = CX.createLinearGradient(0, b.yB*H-spread, 0, b.yB*H+spread*0.3);
+        gy.addColorStop(0,    'rgba('+b.c+',0)');
+        gy.addColorStop(0.35, 'rgba('+b.c+','+al+')');
+        gy.addColorStop(0.65, 'rgba('+b.c+','+(al*0.5)+')');
+        gy.addColorStop(1,    'rgba('+b.c+',0)');
+        CX.fillStyle = gy; CX.fill();
+      }
+      CX.restore();
+    }
+
+    // ORBS
+    for (var i = 0; i < ORBS.length; i++) {
+      var o = ORBS[i];
+      o.x += o.sx; o.y += o.sy;
+      if(o.x<-0.2)o.x=1.2; if(o.x>1.2)o.x=-0.2;
+      if(o.y<-0.2)o.y=1.2; if(o.y>1.2)o.y=-0.2;
+      var pulse = Math.sin(T*0.55 + o.ph)*0.28 + 0.72;
+      var ox = o.x*W + TMX*45*((i%3)*0.4+0.4);
+      var oy = o.y*H + TMY*30*((i%2)*0.5+0.4);
+      var g = CX.createRadialGradient(ox,oy,0,ox,oy,o.r*pulse);
+      g.addColorStop(0,   'rgba('+o.col+','+(o.a*pulse)+')');
+      g.addColorStop(0.5, 'rgba('+o.col+','+(o.a*pulse*0.25)+')');
+      g.addColorStop(1,   'rgba('+o.col+',0)');
+      CX.beginPath(); CX.arc(ox,oy,o.r*pulse,0,6.28);
+      CX.fillStyle = g; CX.fill();
+    }
+    
+    // STARS
+    for (var i = 0; i < STARS.length; i++) {
+      var s = STARS[i];
+      s.tw += s.ts;
+      var flicker = Math.sin(s.tw)*0.28 + 0.72;
+      var sx = s.x*W + TMX*10*s.d;
+      var sy = s.y*H + TMY*7*s.d;
+      CX.beginPath(); CX.arc(sx, sy, s.r*flicker, 0, 6.28);
+      CX.fillStyle = 'rgba('+s.col+','+(s.a*flicker)+')'; CX.fill();
+      if (s.r > 1.0) {
+        var g = CX.createRadialGradient(sx,sy,0,sx,sy,s.r*5);
+        g.addColorStop(0,'rgba('+s.col+',0.1)'); g.addColorStop(1,'rgba('+s.col+',0)');
+        CX.beginPath(); CX.arc(sx,sy,s.r*5,0,6.28);
+        CX.fillStyle=g; CX.fill();
+      }
+    }
+
+    // NODE NETWORK
+    for (var i = 0; i < NODES.length; i++) {
+      var n = NODES[i];
+      n.x += n.vx; n.y += n.vy;
+      if(n.x<0||n.x>1)n.vx*=-1;
+      if(n.y<0||n.y>1)n.vy*=-1;
+    }
+    for (var i = 0; i < NODES.length; i++) {
+      for (var j = i+1; j < NODES.length; j++) {
+        var a = NODES[i], b2 = NODES[j];
+        var dx=(a.x-b2.x)*W, dy=(a.y-b2.y)*H;
+        var dist=Math.sqrt(dx*dx+dy*dy);
+        if(dist<110){
+          CX.beginPath();
+          CX.moveTo(a.x*W+TMX*7, a.y*H+TMY*5);
+          CX.lineTo(b2.x*W+TMX*7, b2.y*H+TMY*5);
+          CX.strokeStyle='rgba(0,212,245,'+(0.13*(1-dist/110))+')';
+          CX.lineWidth=0.6; CX.stroke();
+        }
+      }
+    }
+    for (var i = 0; i < NODES.length; i++) {
+      var n = NODES[i];
+      CX.beginPath(); CX.arc(n.x*W+TMX*7, n.y*H+TMY*5, n.r, 0, 6.28);
+      CX.fillStyle='rgba('+n.col+','+n.a+')'; CX.fill();
+    }
+    
+    // METEORS
+    for (var i = METEORS.length-1; i >= 0; i--) {
+      var m = METEORS[i];
+      m.x += m.spd*1.7; m.y += m.spd*0.65; m.life++;
+      var fade = m.life<12 ? m.life/12 : m.life>m.max-15 ? (m.max-m.life)/15 : 1;
+      var x1=m.x*W, y1=m.y*H, x2=x1-m.len*W*1.4, y2=y1-m.len*H*0.45;
+      var mg = CX.createLinearGradient(x1,y1,x2,y2);
+      mg.addColorStop(0,'rgba(0,212,245,'+(m.a*fade)+')');
+      mg.addColorStop(0.4,'rgba(255,255,255,'+(m.a*fade*0.4)+')');
+      mg.addColorStop(1,'rgba(0,212,245,0)');
+      CX.beginPath(); CX.moveTo(x1,y1); CX.lineTo(x2,y2);
+      CX.strokeStyle=mg; CX.lineWidth=1.5; CX.stroke();
+      if(m.life>=m.max){ METEORS.splice(i,1); if(Math.random()<0.5) spawnMeteor(); }
+    }
+    if(METEORS.length<2 && Math.random()<0.006) spawnMeteor();
+  }
+  bgDraw();
+})();
+
+// ============================================================
+// SCROLL PROGRESS + NAV SCROLL STATE
+// ============================================================
+window.addEventListener('scroll',function(){
+  var t=document.documentElement.scrollTop;
+  var h=document.documentElement.scrollHeight-document.documentElement.clientHeight;
+  document.getElementById('progress-bar').style.width=(t/h*100)+'%';
+  document.getElementById('nav').classList.toggle('scrolled',t>50);
+});
+
+// ============================================================
+// SCROLL REVEAL (IntersectionObserver)
+// ============================================================
+window.addEventListener('load',function(){
+  if(!window.IntersectionObserver)return;
+  var items=[
+    ['.sec-eyebrow','sa-up'],['.sec-title','sa-up'],['.sec-desc','sa-up'],
+    ['.svc-card','sa-up'],['.step-card','sa-up'],['.ind-card','sa-up'],
+    ['.pkg-card','sa-up'],['.why-item','sa-up'],['.testi-card','sa-up'],
+    ['.cta-box','sa-scale'],['.contact-box','sa-up'],
+    ['.hero-left','sa-left'],['.hero-right','sa-right'],
+    ['.ml-card','sa-up']
+  ];
+  var all=[];
+  items.forEach(function(it){
+    document.querySelectorAll(it[0]).forEach(function(el){
+      el.classList.add('sa',it[1]);
+      var sib=Array.from(el.parentElement.children);
+      el.style.transitionDelay=(sib.indexOf(el)*0.08)+'s';
+      all.push(el);
+    });
+  });
+  var obs=new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting){e.target.classList.add('sa-in');obs.unobserve(e.target);}
+    });
+  },{threshold:.1,rootMargin:'0px 0px -30px 0px'});
+  all.forEach(function(el){obs.observe(el);});
+  setTimeout(function(){
+    document.querySelectorAll('.hero-left,.hero-right').forEach(function(el){el.classList.add('sa-in');});
+  },80);
+});
+
+// ============================================================
+// CONTACT FORM — Formspree submission
+// ============================================================
+document.getElementById('submitBtn').addEventListener('click',function(e){
+  // Ripple effect
+  var s=document.createElement('span'),r=this.getBoundingClientRect();
+  s.style.cssText='position:absolute;border-radius:50%;width:20px;height:20px;background:rgba(255,255,255,.3);left:'+(e.clientX-r.left-10)+'px;top:'+(e.clientY-r.top-10)+'px;animation:rippleA .6s ease-out forwards;pointer-events:none';
+  this.appendChild(s);setTimeout(function(){s.remove();},620);
+
+  var name=document.getElementById('f-name').value.trim();
+  var email=document.getElementById('f-email').value.trim();
+  var company=document.getElementById('f-company').value.trim();
+  var message=document.getElementById('f-message').value.trim();
+  var msg=document.getElementById('form-msg');
+  var btn=document.getElementById('submitBtn');
+
+  if(!name||!email||!message){
+    msg.style.cssText='display:block;padding:14px;border-radius:10px;font-size:14px;font-weight:600;text-align:center;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);color:#f87171';
+    msg.textContent='Please fill in your name, email and message.';
+    return;
+  }
+  btn.innerHTML='Sending…';btn.disabled=true;msg.style.display='none';
+
+  fetch('https://formspree.io/f/mzdjzbdz',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Accept':'application/json'},
+    body:JSON.stringify({name:name,_replyto:email,company:company,message:message})
+  })
+  .then(function(res){return res.json();})
+  .then(function(data){
+    if(data.ok||data.next){
+      msg.style.cssText='display:block;padding:14px;border-radius:10px;font-size:14px;font-weight:600;text-align:center;background:rgba(0,212,245,.12);border:1px solid rgba(0,212,245,.35);color:#00d4f5';
+      msg.textContent='✓ Message sent! We will get back to you shortly.';
+      ['f-name','f-email','f-company','f-message'].forEach(function(id){document.getElementById(id).value='';});
+      btn.innerHTML='Sent! ✓';
+    } else { throw new Error('fail'); }
+  })
+  .catch(function(){
+    msg.style.cssText='display:block;padding:14px;border-radius:10px;font-size:14px;font-weight:600;text-align:center;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);color:#f87171';
+    msg.textContent='Something went wrong. Please email us directly.';
+    btn.innerHTML='Send Quote Request';
+    btn.disabled=false;
+  });
+});
+</script>
+</body>
+</html>
